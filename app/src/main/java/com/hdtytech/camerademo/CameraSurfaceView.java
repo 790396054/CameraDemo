@@ -20,7 +20,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public CameraSurfaceView(Context context) {
-        super(context, null);
+        super(context);
     }
 
     public CameraSurfaceView(Context context, AttributeSet attrs) {
