@@ -78,5 +78,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void hasTakePicture(String path) {
         Toast.makeText(this, "拍照成功，保存路径" + path, Toast.LENGTH_SHORT).show();
+        hasOpenCamera();
     }
 }
