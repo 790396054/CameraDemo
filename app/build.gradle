@@ -1,3 +1,5 @@
+import java.nio.channels.Channel
+
 apply plugin: 'com.android.application'
 
 android {
@@ -11,20 +13,92 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs{
+        xyz{
+            storeFile file(KEY_PATH)
+            storePassword KEY_PASS
+            keyAlias ALIAS_NAME
+            keyPassword ALIAS_PASS
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig signingConfigs.xyz
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        xyz{
+            signingConfig signingConfigs.xyz
+            applicationIdSuffix ".xyz"
+        }
+    }
+    sourceSets{
+        main {
+            res.srcDirs = [
+                    'src/main/res/',
+                    'src/main/res/layout/activity'
+            ]
+        }
+    }
+    // 多渠道打包
+    productFlavors{
+        prduct1{
+            //manifestPlaceholders = [CHANNEL_VALUE:"PRODUCT1"]
+        }
+        prduct2{
+            //manifestPlaceholders = [CHANNEL_VALUE:"PRODUCT2"]
+        }
+        prduct3{
+            //manifestPlaceholders = [CHANNEL_VALUE:"PRODUCT3"]
+        }
+    }
+    productFlavors.all{
+        flavor -> flavor.manifestPlaceholders = [CHANNEL_VALUE : name]
+    }
+
+    // 生成重命名包
+    applicationVariants.all {
+        variant ->
+            variant.outputs.each { output ->
+                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')
+                        && 'release'.equals(variant.buildType.name)) {
+                    def apkFile = new File(output.outputFile.getParent(),
+                            "危运车辆App_${variant.flavorName}_ver${variant.versionName}.apk")
+                    output.outputFile = apkFile
+                }
+            }
+    }
+
+    task makeJar(type:Jar){
+        // 清空已经存在的 jar 包
+        delete 'libs/sdk.jar'
+
+        // 指定生成的 jar 包名
+        baseName 'sdk'
+
+        // 从 class 文件生成 jar 包
+        from('build/intermediates/classes/debug/com/xyz/')
+
+        // 打包进 jar 包后的文件目录结构
+        into('com/xyz/')
+
+        // 去掉不需要打包的文件和目录
+        exclude('test/', 'BuildConfig.class', 'R.class')
+
+        // 去掉 R 文件
+        exclude{it.name.startWith('R$');}
+
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
+    compile 'com.google.code.gson:gson:2.8.1'
+    compile project(':myapplication-release')
 }
